@@ -10,10 +10,13 @@ class GaussianNaiveBayes(nn.Module):
     TODO
     ----
     - Make std devs fixable
-    
+    - Look into better param initialization
     """
     def __init__(self, features, classes):
         super(self.__class__, self).__init__()
+
+        self.features = features
+        self.classes = classes
 
         # We need mean and variance per feature and class
         self.register_parameter(
@@ -27,11 +30,18 @@ class GaussianNaiveBayes(nn.Module):
 
         # We need the class priors
         self.register_parameter(
-            "log_class_priors",
+            "class_priors",
             nn.Parameter(torch.Tensor(self.classes))
         )
 
+        self.reset_parameters()
+
+    def reset_parameters(self):
+        self.means.data.zero_()
+        self.variances.data.fill_(1)
+        self.class_priors.data.fill_(1/self.classes)
+
     def forward(self, x):
-        return (self.log_class_priors
-                + torch.sum(- 0.5 * torch.log(2 * pi * self.variances), axis=1)
-                + torch.sum((x - self.means)**2 / self.variances, axis=1))
+        return (torch.log(self.class_priors)
+                + torch.sum(- 0.5 * torch.log(2 * pi * self.variances), dim=1)
+                + torch.sum((x - self.means)**2 / self.variances, dim=1))
