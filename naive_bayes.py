@@ -45,7 +45,7 @@ class GaussianNaiveBayes(nn.Module):
         self.reset_parameters()
 
     def reset_parameters(self):
-        self.means.data.normal_()
+        self.means.data = torch.eye(self.classes, self.features)
         self.variances.data.fill_(1)
         self.class_priors.data.fill_(1/self.classes)
 
