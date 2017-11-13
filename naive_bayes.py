@@ -21,9 +21,9 @@ class GaussianNaiveBayes(nn.Module):
         self.classes = classes
 
         # We need mean and variance per feature and class
-        self.register_parameter(
+        self.register_buffer(
             "means",
-            nn.Parameter(torch.Tensor(self.classes, self.features))
+            Variable(torch.Tensor(self.classes, self.features))
         )
         if not fix_variance:
             self.register_parameter(
@@ -47,10 +47,11 @@ class GaussianNaiveBayes(nn.Module):
     def reset_parameters(self):
         self.means.data = torch.eye(self.classes, self.features)
         self.variances.data.fill_(1)
-        self.class_priors.data.fill_(1/self.classes)
+        # self.variances.data = torch.eye(self.classes, self.features)
+        self.class_priors.data.uniform_()
 
     def forward(self, x):
         x = x[:,np.newaxis,:]
-        return (torch.log(self.class_priors)
-                + torch.sum(- 0.5 * torch.log(2 * pi * torch.abs(self.variances)), dim=1)
-                - torch.sum((x - self.means)**2 / torch.abs(self.variances) / 2, dim=1))
+        return (torch.sum(- 0.5 * torch.log(2 * pi * torch.abs(self.variances))
+                - (x - self.means)**2 / torch.abs(self.variances) / 2, dim=-1)
+                + torch.log(self.class_priors))
